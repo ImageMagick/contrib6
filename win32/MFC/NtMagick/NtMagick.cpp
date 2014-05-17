@@ -73,7 +73,7 @@ BOOL CNtMagickApp::InitInstance()
 
         TCHAR m_szAppPath[MAX_PATH];
         (void) MagickCore::SetClientPath(m_szAppPath);
-        MagickCore::InitializeMagick(m_szAppPath);
+        MagickCore::MagickCoreGenesis(m_szAppPath,MagickFalse);
         MagickCore::RegisterStaticModules();
 
         // Parse command line for standard shell commands, DDE, file open
