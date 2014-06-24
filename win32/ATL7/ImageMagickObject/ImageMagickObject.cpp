@@ -36,7 +36,7 @@ class CModuelOverrideClass
 			if( dwReason == DLL_PROCESS_ATTACH )
 			{
 				MagickCore::ExceptionInfo
-				exception;
+				*exception;
 
 #ifdef _DEBUG
 				int tmpDbgFlag;
@@ -81,10 +81,10 @@ class CModuelOverrideClass
 				// MagickCore::DebugString("DLL Attach -  path: %s\n",m_szAppPath);
 				MagickCore::MagickCoreGenesis( app_path, MagickCore::MagickFalse );
 				MagickCore::RegisterStaticModules();
-				MagickCore::GetExceptionInfo( &exception );
-				(void)MagickCore::GetMagicInfo( (unsigned char*)NULL, 0, &exception );
-				(void)MagickCore::GetDelegateInfo( "*", "*", &exception );
-				MagickCore::DestroyExceptionInfo( &exception );
+				exception=MagickCore::AcquireExceptionInfo();
+				(void)MagickCore::GetMagicInfo( (unsigned char*)NULL, 0, exception );
+				(void)MagickCore::GetDelegateInfo( "*", "*", exception );
+				(void)MagickCore::DestroyExceptionInfo( exception );
 			}
 			else if( dwReason == DLL_PROCESS_DETACH )
 			{
@@ -140,7 +140,7 @@ class MagickImageError
 {
 	public:
 
-		MagickCore::ExceptionInfo exception;
+		MagickCore::ExceptionInfo *exception;
 		bool fullException;
 		DWORD fullExceptionCode;
 
@@ -151,7 +151,12 @@ class MagickImageError
 			fullException = FALSE;
 			fullExceptionCode = 0;
 
-			MagickCore::GetExceptionInfo(& exception );
+			exception=MagickCore::AcquireExceptionInfo();
+		}
+
+		~MagickImageError()
+		{
+			(void) MagickCore::DestroyExceptionInfo(exception);
 		}
 
 		static LPCSTR translate_exception( DWORD );
@@ -531,7 +536,7 @@ STDMETHODIMP MagickImage::get_Item(
 		{
 			MagickCore::Image* image;
 			MagickCore::ImageInfo* image_info;
-			MagickCore::ExceptionInfo exception;
+			MagickCore::ExceptionInfo* exception;
 			LPSTR lpszNext;
 
 			lpszNext = StrChrA( szVal, '.' );
@@ -545,8 +550,9 @@ STDMETHODIMP MagickImage::get_Item(
 			}
 
 			// lookup the registry id using token and pass the image in
-			MagickCore::GetExceptionInfo( &exception );
-			image = (MagickCore::Image *) MagickCore::GetImageRegistry( MagickCore::ImageRegistryType, szVal, &exception );
+			exception=MagickCore::AcquireExceptionInfo();
+			image = (MagickCore::Image *) MagickCore::GetImageRegistry( MagickCore::ImageRegistryType, szVal, exception );
+			(void) MagickCore::DestroyExceptionInfo(exception);
 			if( image != (MagickCore::Image*)NULL )
 			{
 				LPSTR text;
@@ -1149,9 +1155,9 @@ void MagickImage::CheckAndReportError(
 		else
 		{
 			const MagickCore::ExceptionInfo* exceptionlist;
-			MagickCore::ResetLinkedListIterator( (MagickCore::LinkedListInfo*)error.exception.exceptions );
+			MagickCore::ResetLinkedListIterator( (MagickCore::LinkedListInfo*)error.exception->exceptions );
 			exceptionlist = (const MagickCore::ExceptionInfo*)MagickCore::GetNextValueInLinkedList( (MagickCore::LinkedListInfo*)
-				error.exception.exceptions );
+				error.exception->exceptions );
 
 			*message_text = 0;
 
@@ -1171,7 +1177,7 @@ void MagickImage::CheckAndReportError(
 					exceptionlist->description ? exceptionlist->description : "" );
 
 				exceptionlist = (const MagickCore::ExceptionInfo*)MagickCore::GetNextValueInLinkedList( (MagickCore::LinkedListInfo*)
-					error.exception.exceptions );
+					error.exception->exceptions );
 			}
 			hr = MAKE_HRESULT( SEVERITY_ERROR, FACILITY_ITF, dwErrorBase + 1001 );
 
@@ -1184,7 +1190,8 @@ void MagickImage::CheckAndReportError(
 		}
 	}
 
-	MagickCore::DestroyExceptionInfo( &error.exception );
+	MagickCore::DestroyExceptionInfo( error.exception );
+	error.exception=MagickCore::AcquireExceptionInfo();
 }
 
 HRESULT MagickImage::Execute(
@@ -1215,7 +1222,7 @@ HRESULT MagickImage::TestHarness(
 	(void)MagickCore::LogMagickEvent( MagickCore::ResourceEvent, GetMagickModule(),
 		"TestHarness" );
 
-	MagickCore::ExceptionInfo exception;
+	MagickCore::ExceptionInfo *exception;
 	char
 	* reason,
 	* description,
@@ -1223,7 +1230,6 @@ HRESULT MagickImage::TestHarness(
 
 	reason = "unknown";
 	description = "unknown";
-	MagickCore::GetExceptionInfo( &exception );
 
 	CComVariant var;
 
@@ -1240,13 +1246,13 @@ HRESULT MagickImage::TestHarness(
 
 	if( rg.GetDimensions() != 1 )
 	{
-		ThrowPerformException( &exception, MagickCore::ErrorException,
+		ThrowPerformException( exception, MagickCore::ErrorException,
 			"Perform", "Multi dimensional array passed" );
 	}
 
 	if( rg.GetType() != VT_VARIANT )
 	{
-		ThrowPerformException( &exception, MagickCore::ErrorException,
+		ThrowPerformException( exception, MagickCore::ErrorException,
 			"Perform", "Non VARIANT array type passed" );
 	}
 
@@ -1271,7 +1277,8 @@ HRESULT MagickImage::TestHarness(
 		MagickCore::ImageInfo* image_info;
 		image_info = MagickCore::CloneImageInfo( (MagickCore::ImageInfo*)NULL );
 		text = (char*)NULL;
-		hr = Execute( MagickCore::ConvertImageCommand, &text, image_info, &exception );
+		exception=MagickCore::AcquireExceptionInfo();
+		hr = Execute( MagickCore::ConvertImageCommand, &text, image_info, exception );
 		MagickCore::DestroyImageInfo( image_info );
 		if( text != (char*)NULL )
 		{
@@ -1282,14 +1289,14 @@ HRESULT MagickImage::TestHarness(
 
 		if( FAILED( hr ) )
 		{
-			if( exception.reason )
+			if( exception->reason )
 			{
-				reason = exception.reason;
+				reason = exception->reason;
 			}
 
-			if( exception.description )
+			if( exception->description )
 			{
-				description = exception.description;
+				description = exception->description;
 			}
 		}
 	}
@@ -1305,7 +1312,7 @@ HRESULT MagickImage::TestHarness(
 	{
 		hr = MAKE_HRESULT( SEVERITY_ERROR, FACILITY_ITF, dwErrorBase + 1001 );
 		MagickCore::FormatLocaleString( message_text, MaxTextExtent,
-			"convert: %d: %.1024s: %.1024s", exception.severity, reason, description );
+			"convert: %d: %.1024s: %.1024s", exception->severity, reason, description );
 		CA2WEX<MaxTextExtent> str( message_text );
 #ifdef _DEBUG
 
@@ -1314,7 +1321,7 @@ HRESULT MagickImage::TestHarness(
 		Error( str, __uuidof( IMagickImage ), hr );
 	}
 
-	MagickCore::DestroyExceptionInfo( &exception );
+	MagickCore::DestroyExceptionInfo( exception );
 	return hr;
 }
 
@@ -1338,7 +1345,7 @@ STDMETHODIMP MagickImage::Compare(
 	{
 		EmptyArgs();
 		AddArgs( L"-compare" );
-		hr = Perform( MagickCore::CompareImageCommand, pArrayVar, pVar, &error.exception );
+		hr = Perform( MagickCore::CompareImageCommand, pArrayVar, pVar, error.exception );
 	}
 #ifdef ENABLE_FULL_EXCEPTIONS
 	__except( 1 )
@@ -1366,7 +1373,7 @@ STDMETHODIMP MagickImage::Composite(
 	{
 		EmptyArgs();
 		AddArgs( L"-composite" );
-		hr = Perform( MagickCore::CompositeImageCommand, pArrayVar, pVar, &error.exception );
+		hr = Perform( MagickCore::CompositeImageCommand, pArrayVar, pVar, error.exception );
 	}
 #ifdef ENABLE_FULL_EXCEPTIONS
 	__except( 1 )
@@ -1396,7 +1403,7 @@ STDMETHODIMP MagickImage::Convert(
 	{
 		EmptyArgs();
 		AddArgs( L"-convert" );
-		hr = Perform( MagickCore::ConvertImageCommand, pArrayVar, pVar, &error.exception );
+		hr = Perform( MagickCore::ConvertImageCommand, pArrayVar, pVar, error.exception );
 	}
 #ifdef ENABLE_FULL_EXCEPTIONS
 	__except( 1 )
@@ -1424,7 +1431,7 @@ HRESULT MagickImage::Identify(
 	{
 		EmptyArgs();
 		AddArgs( L"-identify" );
-		hr = Perform( MagickCore::IdentifyImageCommand, pArrayVar, pVar, &error.exception );
+		hr = Perform( MagickCore::IdentifyImageCommand, pArrayVar, pVar, error.exception );
 	}
 #ifdef ENABLE_FULL_EXCEPTIONS
 	__except( 1 )
@@ -1452,7 +1459,7 @@ HRESULT MagickImage::Mogrify(
 	{
 		EmptyArgs();
 		AddArgs( L"-mogrify" );
-		hr = Perform( MagickCore::MogrifyImageCommand, pArrayVar, pVar, &error.exception );
+		hr = Perform( MagickCore::MogrifyImageCommand, pArrayVar, pVar, error.exception );
 	}
 #ifdef ENABLE_FULL_EXCEPTIONS
 	__except( 1 )
@@ -1481,7 +1488,7 @@ HRESULT MagickImage::Montage(
 	{
 		EmptyArgs();
 		AddArgs( L"-montage" );
-		hr = Perform( MagickCore::MontageImageCommand, pArrayVar, pVar, &error.exception );
+		hr = Perform( MagickCore::MontageImageCommand, pArrayVar, pVar, error.exception );
 	}
 #ifdef ENABLE_FULL_EXCEPTIONS
 	__except( 1 )
@@ -1509,7 +1516,7 @@ STDMETHODIMP MagickImage::Stream(
 	{
 		EmptyArgs();
 		AddArgs( L"-stream" );
-		hr = Perform( MagickCore::StreamImageCommand, pArrayVar, pVar, &error.exception );
+		hr = Perform( MagickCore::StreamImageCommand, pArrayVar, pVar, error.exception );
 	}
 #ifdef ENABLE_FULL_EXCEPTIONS
 	__except( 1 )
