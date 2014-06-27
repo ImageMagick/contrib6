@@ -1230,6 +1230,7 @@ HRESULT MagickImage::TestHarness(
 
 	reason = "unknown";
 	description = "unknown";
+	exception=MagickCore::AcquireExceptionInfo();
 
 	CComVariant var;
 
@@ -1277,7 +1278,6 @@ HRESULT MagickImage::TestHarness(
 		MagickCore::ImageInfo* image_info;
 		image_info = MagickCore::CloneImageInfo( (MagickCore::ImageInfo*)NULL );
 		text = (char*)NULL;
-		exception=MagickCore::AcquireExceptionInfo();
 		hr = Execute( MagickCore::ConvertImageCommand, &text, image_info, exception );
 		MagickCore::DestroyImageInfo( image_info );
 		if( text != (char*)NULL )
