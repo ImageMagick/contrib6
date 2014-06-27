@@ -553,7 +553,6 @@ STDMETHODIMP MagickImage::get_Item(
 			// lookup the registry id using token and pass the image in
 			exception=MagickCore::AcquireExceptionInfo();
 			image = (MagickCore::Image *) MagickCore::GetImageRegistry( MagickCore::ImageRegistryType, szVal, exception );
-			(void) MagickCore::DestroyExceptionInfo(exception);
 			if( image != (MagickCore::Image*)NULL )
 			{
 				LPSTR text;
@@ -566,6 +565,7 @@ STDMETHODIMP MagickImage::get_Item(
 				MagickCore::RelinquishMagickMemory( text );
 				hr = S_OK;
 			}
+			(void) MagickCore::DestroyExceptionInfo(exception);
 		}
 	}
 
