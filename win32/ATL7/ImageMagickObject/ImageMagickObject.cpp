@@ -154,9 +154,10 @@ class MagickImageError
 			exception=MagickCore::AcquireExceptionInfo();
 		}
 
-		~MagickImageError()
+		void Cleanup()
 		{
-			(void) MagickCore::DestroyExceptionInfo(exception);
+			if (exception != (MagickCore::ExceptionInfo *) NULL)
+				exception=MagickCore::DestroyExceptionInfo(exception);
 		}
 
 		static LPCSTR translate_exception( DWORD );
@@ -1190,8 +1191,7 @@ void MagickImage::CheckAndReportError(
 		}
 	}
 
-	MagickCore::DestroyExceptionInfo( error.exception );
-	error.exception=MagickCore::AcquireExceptionInfo();
+	error.Cleanup();
 }
 
 HRESULT MagickImage::Execute(
