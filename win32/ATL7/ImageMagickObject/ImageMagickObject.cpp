@@ -61,30 +61,10 @@ class CModuelOverrideClass
 				_CrtSetReportMode( _CRT_ERROR, DEF_DEBUG_MODE );
 #endif
 
-				/* The first thing to do is make sure that basic critical sections are
-				   initialized properly. This should prevent ANY other race conditions
-				 */
-
-				// MagickCore::InitializeSemaphore();
-
-				/* Next we use a back door to init the path to US so that the logging
-				   system can find its configuration file log.gk and load it
-				 */
 				 CT2AEX<MAX_PATH> app_path( m_szAppPath );
 				(void)MagickCore::SetClientPath( app_path );
 
-				//(void) MagickCore::SetLogEventMask("All");
-				(void)MagickCore::LogMagickEvent( MagickCore::ResourceEvent, GetMagickModule(),
-					"DLL Attach -  path: %s", app_path );
-
-				// MagickCore::InitializeTracingCriticalSection();
-				// MagickCore::DebugString("DLL Attach -  path: %s\n",m_szAppPath);
-				MagickCore::MagickCoreGenesis( app_path, MagickCore::MagickFalse );
-				MagickCore::RegisterStaticModules();
-				exception=MagickCore::AcquireExceptionInfo();
-				(void)MagickCore::GetMagicInfo( (unsigned char*)NULL, 0, exception );
-				(void)MagickCore::GetDelegateInfo( "*", "*", exception );
-				(void)MagickCore::DestroyExceptionInfo( exception );
+				MagickCore::MagickCoreGenesis(app_path,MagickCore::MagickFalse);
 			}
 			else if( dwReason == DLL_PROCESS_DETACH )
 			{
@@ -1164,7 +1144,7 @@ void MagickImage::CheckAndReportError(
 
 			while( exceptionlist != (const MagickCore::ExceptionInfo*)NULL )
 			{
-				int len = strlen( message_text );
+				size_t len = strlen( message_text );
 				if( MaxTextExtent - len < 0 )
 				{
 					break;
@@ -1201,10 +1181,11 @@ HRESULT MagickImage::Execute(
 	MagickCore::ExceptionInfo* exception
 )
 {
-	unsigned int retcode = 0;
+	MagickCore::MagickBooleanType
+		status;
 
-	retcode = !(func)( image_info, GetArgc(), GetArgv(), s, exception );
-	if( !retcode )
+	status = (func)( image_info, GetArgc(), GetArgv(), s, exception );
+	if( status == MagickCore::MagickFalse )
 	{
 		return E_UNEXPECTED;
 	}

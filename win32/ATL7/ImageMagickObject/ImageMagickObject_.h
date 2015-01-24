@@ -43,7 +43,9 @@ using namespace ATL;
 
 namespace MagickCore
 {
-#define _VISUALC_
+#ifndef _VISUALC_
+	#define _VISUALC_
+#endif
 //#define _MAGICKDLL_
 //#define _MAGICKLIB_
 #include <wand/MagickWand.h>
