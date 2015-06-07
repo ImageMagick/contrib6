@@ -71,7 +71,7 @@ BOOL CNtMagickApp::InitInstance()
                 RUNTIME_CLASS(CNtMagickView));
         AddDocTemplate(pDocTemplate);
 
-        TCHAR m_szAppPath[MAX_PATH];
+        char m_szAppPath[MAX_PATH];
         (void) MagickCore::SetClientPath(m_szAppPath);
         MagickCore::MagickCoreGenesis(m_szAppPath,MagickFalse);
         MagickCore::RegisterStaticModules();

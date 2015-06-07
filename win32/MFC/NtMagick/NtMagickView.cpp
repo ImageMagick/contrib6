@@ -128,7 +128,7 @@ void CNtMagickView::OnDraw(CDC* pDC)
 
   CWnd* pMainWnd = AfxGetMainWnd();
 
-  pMainWnd->SetWindowText("ImageMagick Win32 Image Viewer");
+  pMainWnd->SetWindowText(L"ImageMagick Win32 Image Viewer");
 
   DoDisplayImage();
 
@@ -218,7 +218,7 @@ void CNtMagickView::OnFileOpen()
 
 
 
-  szFolder = AfxGetApp()->GetProfileString("Image","Path","");
+  szFolder = AfxGetApp()->GetProfileString(L"Image",L"Path",L"");
 
 
 
@@ -226,7 +226,7 @@ void CNtMagickView::OnFileOpen()
 
   fileDlg.m_ofn.Flags|=OFN_FILEMUSTEXIST | OFN_EXPLORER | OFN_READONLY;
 
-  fileDlg.m_ofn.lpstrTitle="Choose the image to view";
+  fileDlg.m_ofn.lpstrTitle=L"Choose the image to view";
 
   fileDlg.m_ofn.lpstrInitialDir= szFolder;
 
@@ -256,9 +256,9 @@ void CNtMagickView::OnFileOpen()
 
       szFolder.TrimRight(fileImage.GetFileName());
 
-      szFolder.TrimRight("\\");
+      szFolder.TrimRight(L"\\");
 
-      AfxGetApp()->WriteProfileString("Image","Path", szFolder);
+      AfxGetApp()->WriteProfileString(L"Image",L"Path", szFolder);
 
     }
 
@@ -275,6 +275,20 @@ void CNtMagickView::OnFileOpen()
 // Read image.
 
 //-----------------------------------------------------------------------
+
+static inline std::string ws2s(const std::wstring& s)
+{
+  size_t
+    len;
+
+  std::string
+    result;
+
+  len=WideCharToMultiByte(CP_UTF8,0,s.c_str(),s.length()+1,0,0,0,0);
+  result=std::string(len,'\0');
+  WideCharToMultiByte(CP_UTF8,0,s.c_str(),s.length()+1,&result[0],len,0,0);
+  return result;
+}
 
 
 
@@ -294,7 +308,7 @@ BOOL CNtMagickView::DoReadImage()
 
   {
 
-    m_Image.read(m_szFile.GetBuffer(MAX_PATH+1));
+    m_Image.read(ws2s(m_szFile.GetBuffer(MAX_PATH+1)));
 
   }
 
@@ -350,7 +364,7 @@ void CNtMagickView::DoDisplayError(CString szFunction, CString szCause)
 
   CString szMsg;
 
-  szMsg.Format("NtMagickView function [%s] encountered an error.\n%s",szFunction,szCause);
+  szMsg.Format(L"NtMagickView function [%s] encountered an error.\n%s",szFunction,szCause);
 
   AfxMessageBox(szMsg,MB_OK);
 
