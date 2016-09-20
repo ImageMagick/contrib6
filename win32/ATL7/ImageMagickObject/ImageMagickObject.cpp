@@ -15,7 +15,7 @@ static const char objName[] = "ImageMagickObject";
 static const char methodName[] = "Perform";
 
 // xtrnarray
-static const TCHAR xtrnarray_fmt[] = _T("xtrnarray:0x%lx,%ws");
+static const TCHAR xtrnarray_fmt[] = _T("xtrnarray:%p,%ws");
 
 
 [ module( dll, name = "ImageMagickObject", helpstring = "ImageMagickObject 1.0 Type Library" ) ]
@@ -465,7 +465,7 @@ static long SafeArraySize(
 
 void MagickImage::GetXtrnArrayStr( CString& s, const SAFEARRAY* psa, LPCWSTR wszName )
 {
-	s.Format( xtrnarray_fmt, (unsigned long)psa, wszName );
+	s.Format( xtrnarray_fmt, psa, wszName );
 }
 
 void MagickImage::GetXtrnArrayStr( CString& s, const SAFEARRAY* psa )
